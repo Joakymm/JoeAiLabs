@@ -3,10 +3,14 @@ dist/
 *.log
 .DS_Store
 
-# Windows reserved device names (NTFS artifacts)
+# Windows reserved device names & shell artifacts
 nul
 NUL
 Nul
 dir
 DIR
 Dir
+cd
+CD
+git
+GIT
