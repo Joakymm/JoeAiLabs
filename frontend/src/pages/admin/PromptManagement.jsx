@@ -11,7 +11,8 @@ const defaultPrompt = {
   placeholders: [], description: '', tags: [], difficulty: 'beginner',
   pluginsNeeded: [], estimatedTime: '5 min', toolType: 'writing-copy',
   toolName: '', isPublished: true,
-  sampleOutput: { type: '', url: '', thumbnail: '' },
+  sampleOutput: { type: '', url: '', thumbnail: '', caption: '' },
+  featured: false,
 };
 
 function PromptForm({ prompt, onSave, onClose }) {
@@ -20,7 +21,7 @@ function PromptForm({ prompt, onSave, onClose }) {
     tags: prompt.tags?.join(', ') || '',
     placeholders: prompt.placeholders?.join(', ') || '',
     pluginsNeeded: prompt.pluginsNeeded?.join(', ') || '',
-    sampleOutput: prompt.sampleOutput || { type: '', url: '', thumbnail: '' },
+    sampleOutput: prompt.sampleOutput || { type: '', url: '', thumbnail: '', caption: '' },
   } : { ...defaultPrompt, tags: '', placeholders: '', pluginsNeeded: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -82,11 +83,17 @@ function PromptForm({ prompt, onSave, onClose }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div><label>Sample URL</label><input value={form.sampleOutput.url} onChange={e => changeSample('url', e.target.value)} /></div>
             <div><label>Thumbnail URL</label><input value={form.sampleOutput.thumbnail} onChange={e => changeSample('thumbnail', e.target.value)} /></div>
+            <div style={{ gridColumn: '1 / -1' }}><label>Caption</label><input value={form.sampleOutput.caption || ''} onChange={e => changeSample('caption', e.target.value)} /></div>
           </div>
         )}
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 0, marginBottom: 20 }}>
-          <input type="checkbox" checked={form.isPublished} onChange={e => change('isPublished', e.target.checked)} /> Published
-        </label>
+        <div style={{ display: 'flex', gap: 20, marginBottom: 20 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 0 }}>
+            <input type="checkbox" checked={form.isPublished} onChange={e => change('isPublished', e.target.checked)} /> Published
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 0 }}>
+            <input type="checkbox" checked={form.featured || false} onChange={e => change('featured', e.target.checked)} /> <i className="fas fa-star" style={{ color:'#ffd700' }} /> Featured
+          </label>
+        </div>
         <button type="submit" className="btn btn-primary btn-full" disabled={saving}>
           {saving ? <><i className="fas fa-circle-notch fa-spin" /> Saving...</> : <><i className="fas fa-save" /> SAVE PROMPT</>}
         </button>
@@ -119,6 +126,12 @@ export default function PromptManagement() {
     await adminAPI.deletePrompt(id);
     setConfirmDelete(null);
     setMsg('Prompt deleted.');
+    refetch();
+  };
+
+  const handleToggleFeatured = async (id, val) => {
+    await adminAPI.toggleFeatured(id, val);
+    setMsg(val ? 'Prompt featured.' : 'Featured removed.');
     refetch();
   };
 
@@ -184,6 +197,7 @@ export default function PromptManagement() {
                 <th style={{ textAlign: 'left', padding: '10px 14px', color: 'var(--text-muted)' }}>Difficulty</th>
                 <th style={{ textAlign: 'center', padding: '10px 14px', color: 'var(--text-muted)' }}>Copies</th>
                 <th style={{ textAlign: 'center', padding: '10px 14px', color: 'var(--text-muted)' }}>Status</th>
+                <th style={{ textAlign: 'center', padding: '10px 14px', color: 'var(--text-muted)' }}>Featured</th>
                 <th style={{ textAlign: 'right', padding: '10px 14px', color: 'var(--text-muted)' }}>Actions</th>
               </tr>
             </thead>
@@ -204,13 +218,29 @@ export default function PromptManagement() {
                     }}>{p.difficulty}</span>
                   </td>
                   <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--neon-yellow)', fontFamily: 'Orbitron,sans-serif' }}>{p.copyCount}</td>
-                  <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                    <span style={{
-                      padding: '2px 10px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 600,
-                      color: p.isPublished ? 'var(--neon-green)' : 'var(--text-dim)',
-                      background: p.isPublished ? 'rgba(0,255,163,0.1)' : 'rgba(255,255,255,0.04)',
-                    }}>{p.isPublished ? 'LIVE' : 'DRAFT'}</span>
-                  </td>
+                    <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                      <span style={{ padding: '2px 10px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 600,
+                        color: p.isPublished ? 'var(--neon-green)' : 'var(--text-dim)',
+                        background: p.isPublished ? 'rgba(0,255,163,0.1)' : 'rgba(255,255,255,0.04)',
+                      }}>{p.isPublished ? 'LIVE' : 'DRAFT'}</span>
+                    </td>
+                    <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                      <button onClick={() => handleToggleFeatured(p._id, !p.featured)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem',
+                          color: p.featured ? '#ffd700' : 'var(--text-dim)' }}>
+                        <i className={`fas fa-star${p.featured ? '' : '-regular'}`} />
+                      </button>
+                    </td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                      <button onClick={() => { setEditPrompt(p); setShowForm(true); }}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', marginRight: 8 }}>
+                        <i className="fas fa-edit" />
+                      </button>
+                      <button onClick={() => setConfirmDelete({ id: p._id, title: p.title })}
+                        style={{ background: 'none', border: 'none', color: 'var(--neon-red)', cursor: 'pointer' }}>
+                        <i className="fas fa-trash" />
+                      </button>
+                    </td>
                   <td style={{ padding: '10px 14px', textAlign: 'right' }}>
                     <button onClick={() => { setEditPrompt(p); setShowForm(true); }}
                       style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', marginRight: 8 }}>

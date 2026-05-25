@@ -6,7 +6,7 @@ const moduleSchema = new mongoose.Schema({
   subtitle:    { type: String, default: '' },
   description: { type: String, required: true },
   emoji:       { type: String, default: '📚' },
-  isPremium:   { type: Boolean, default: false },  // modules 4-6 are premium
+  isPremium:   { type: Boolean, default: false },  // premium modules require upgrade
   color:       { type: String, default: 'green' }, // 'green' | 'yellow' | 'blue'
   estimatedHours: { type: Number, default: 2 },
   tags:        [{ type: String }],

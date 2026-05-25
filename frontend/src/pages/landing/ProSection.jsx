@@ -8,7 +8,7 @@ const FREE_FEATURES = [
 ];
 
 const PRO_FEATURES = [
-  'All 6 AI modules — full access',
+  'All 13+ AI modules — full access',
   'Premium prompt vault (226+)',
   'Make money with AI (Train AI)',
   'Creator workflow blueprints',

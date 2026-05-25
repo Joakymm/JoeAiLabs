@@ -127,6 +127,14 @@ router.put('/prompts/:id', async (req, res) => {
   } catch (err) { res.status(400).json({ success: false, message: err.message }); }
 });
 
+router.patch('/prompts/:id/featured', async (req, res) => {
+  try {
+    const prompt = await Prompt.findByIdAndUpdate(req.params.id, { featured: req.body.featured }, { new: true });
+    if (!prompt) return res.status(404).json({ success: false, message: 'Prompt not found.' });
+    res.json({ success: true, data: prompt });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
 router.delete('/prompts/:id', async (req, res) => {
   try {
     await Prompt.findByIdAndDelete(req.params.id);
@@ -195,7 +203,17 @@ router.get('/analytics', async (req, res) => {
     ]);
 
     const topLessons = await Lesson.aggregate([
-      { $lookup: { from: 'users', pipeline: [{ $unwind: '$completedLessons' }], as: 'completed' } },
+      {
+        $lookup: {
+          from: 'users',
+          let: { lessonId: '$_id' },
+          pipeline: [
+            { $unwind: '$completedLessons' },
+            { $match: { $expr: { $eq: ['$completedLessons.lessonId', '$$lessonId'] } } },
+          ],
+          as: 'completed',
+        },
+      },
       { $project: { title: 1, count: { $size: '$completed' } } },
       { $sort: { count: -1 } },
       { $limit: 10 },

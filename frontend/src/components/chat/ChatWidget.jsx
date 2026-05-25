@@ -137,7 +137,7 @@ export default function ChatWidget() {
       {open && (
         <div className="chat-widget" style={{
           position: 'fixed', bottom: 96, right: 24, zIndex: 999,
-          width: 380, height: 560,
+          width: 380, maxHeight: 'calc(100vh - 180px)', height: 480,
           background: 'var(--bg-card)',
           border: '1px solid rgba(0,255,163,0.2)',
           borderRadius: 16,
@@ -289,14 +289,14 @@ export default function ChatWidget() {
         .chat-markdown strong { color: var(--neon-green); }
         .chat-markdown blockquote { border-left: 3px solid var(--neon-yellow); padding-left: 12px; margin: 8px 0; color: var(--text-muted); font-style: italic; }
         @media (max-width: 600px) {
-          .chat-widget { width: calc(100vw - 32px) !important; right: 16px !important; bottom: 84px !important; height: 70vh !important; max-height: 560px !important; }
+          .chat-widget { width: calc(100vw - 32px) !important; right: 16px !important; bottom: 84px !important; height: 70vh !important; max-height: 480px !important; }
           .chat-toggle { width: 52px !important; height: 52px !important; font-size: 1.25rem !important; bottom: 16px !important; right: 16px !important; }
         }
         @media (min-width: 601px) and (max-width: 900px) {
-          .chat-widget { width: 340px !important; height: 480px !important; right: 20px !important; }
+          .chat-widget { width: 340px !important; height: 420px !important; right: 20px !important; }
         }
         @media (max-width: 400px) {
-          .chat-widget { width: calc(100vw - 24px) !important; right: 12px !important; height: 75vh !important; }
+          .chat-widget { width: calc(100vw - 24px) !important; right: 12px !important; height: 65vh !important; max-height: 420px !important; }
           .chat-toggle { width: 48px !important; height: 48px !important; font-size: 1.1rem !important; bottom: 12px !important; right: 12px !important; }
         }
       `}</style>

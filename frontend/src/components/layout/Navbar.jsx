@@ -76,13 +76,19 @@ export default function Navbar() {
           <div className="navbar-desktop-right">
             {isLoggedIn ? (
               <>
-                <div className="navbar-user">
-                  <div className="navbar-avatar"><i className="fas fa-user" /></div>
+                <Link to="/settings" className="navbar-user" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                  <div className="navbar-avatar">
+                    {user?.avatar ? (
+                      <img src={user.avatar} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <i className="fas fa-user" />
+                    )}
+                  </div>
                   <div className="navbar-user-info">
-                    <span className="navbar-username">{user?.username}</span>
+                    <span className="navbar-username" style={{ transition: 'color 0.2s' }}>{user?.username}</span>
                     {user?.isPremium && <span className="navbar-pro-badge">PRO</span>}
                   </div>
-                </div>
+                </Link>
                 <button onClick={handleLogout} className="btn btn-ghost btn-sm">
                   <i className="fas fa-right-from-bracket" /> Logout
                 </button>
@@ -124,13 +130,19 @@ export default function Navbar() {
         </div>
 
         {isLoggedIn && (
-          <div className="mobile-drawer-user">
-            <div className="navbar-avatar"><i className="fas fa-user" /></div>
+          <Link to="/settings" onClick={() => setMenuOpen(false)} className="mobile-drawer-user" style={{ textDecoration: 'none', display: 'flex', gap: 12 }}>
+            <div className="navbar-avatar">
+              {user?.avatar ? (
+                <img src={user.avatar} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <i className="fas fa-user" />
+              )}
+            </div>
             <div>
               <div className="mobile-drawer-username">{user?.username}</div>
               {user?.isPremium && <span className="navbar-pro-badge">PRO</span>}
             </div>
-          </div>
+          </Link>
         )}
 
         <div className="mobile-drawer-links">

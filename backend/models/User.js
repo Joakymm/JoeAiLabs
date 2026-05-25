@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema({
   isPremium:       { type: Boolean, default: false },
   reputationScore: { type: Number, default: 0 },
   completedLessons:{ type: [progressEntrySchema], default: [] },
+  bookmarks:       [{ type: mongoose.Schema.Types.ObjectId, ref: 'Prompt' }],
   lastActive:      { type: Date, default: Date.now },
 }, { timestamps: true });
 

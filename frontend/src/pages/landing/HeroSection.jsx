@@ -1,26 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-import chatgpt from '../../images/aitoolslogo/chatgpt_ai_logo.jpg';
-import claude from '../../images/aitoolslogo/claude_ai_logo.jpg';
-import google from '../../images/aitoolslogo/Google_ai_logo.jpg';
-import gemini from '../../images/aitoolslogo/Gemini_ai_logo.jpg';
-import copilot from '../../images/aitoolslogo/copilot_ai_logo.jpg';
-import deepseek from '../../images/aitoolslogo/deepseek_ai_logo.jpg';
-import perplexity from '../../images/aitoolslogo/perplexity_ai_logo.jpg';
-import grok from '../../images/aitoolslogo/Grok_ai_logo.jpg';
-import heygen from '../../images/aitoolslogo/Heygen_ai_logo.jpg';
-import elevenlabs from '../../images/aitoolslogo/Elevenlabs_ai_logo.jpg';
-import lovable from '../../images/aitoolslogo/Lovable_ai_logo.jpg';
-import make from '../../images/aitoolslogo/Make_ai_logo.jpg';
-import n8n from '../../images/aitoolslogo/n8n_ai_logo.jpg';
-import canva from '../../images/aitoolslogo/Canva_ai_logo.jpg';
-
-const AI_LOGOS = [
-  chatgpt, claude, google, gemini, copilot, deepseek,
-  perplexity, grok, heygen, elevenlabs, lovable, make, n8n, canva,
-];
-
 export default function HeroSection() {
   const { isLoggedIn } = useAuth();
 
@@ -39,23 +19,6 @@ export default function HeroSection() {
       <div className="hero-neural-lines" />
       {/* Floating particles */}
       <div className="particles" />
-
-      {/* AI Tools Marquee — Top */}
-      <div className="ai-tools-marquee">
-        <div className="ai-tools-marquee-bg" />
-        <div className="ai-tools-marquee-track">
-          <div className="ai-tools-marquee-content">
-            {AI_LOGOS.map((src, i) => (
-              <img key={i} src={src} alt="" className="ai-tool-logo" />
-            ))}
-          </div>
-          <div className="ai-tools-marquee-content">
-            {AI_LOGOS.map((src, i) => (
-              <img key={`dup-${i}`} src={src} alt="" className="ai-tool-logo" />
-            ))}
-          </div>
-        </div>
-      </div>
 
       <div className="hero-main" style={{
         flex: 1,
@@ -110,21 +73,21 @@ export default function HeroSection() {
             marginBottom: 20,
           }}>
             <span style={{ display: 'block', color: '#fff' }}>
-              The AI{' '}
+              Master{' '}
               <span style={{
                 color: 'var(--neon-green)',
                 textShadow: '0 0 40px rgba(0,255,163,0.3)',
               }}>
-                Operating System
+                AI Creation
               </span>
             </span>
             <span style={{ display: 'block', color: '#fff' }}>
-              for{' '}
+              in{' '}
               <span style={{
                 color: 'var(--neon-yellow)',
                 textShadow: '0 0 40px rgba(255,214,0,0.3)',
               }}>
-                Creators.
+                One Place.
               </span>
             </span>
           </h1>
@@ -136,9 +99,8 @@ export default function HeroSection() {
             maxWidth: 500,
             marginBottom: 36,
           }}>
-            JOEAILABS helps creators, students, freelancers, and entrepreneurs
-            master AI tools, prompt engineering, content creation, automation,
-            and monetization through real-world workflows.
+           Learn how to use AI to create music, images, videos, presentations, documents, websites, social media content, and more — with step-by-step real-world tutorials designed for creators, students, freelancers, entrepreneurs, and 
+           anyone who wants to work smarter, create faster, and build powerful digital skills using modern AI tools.
           </p>
 
           <div className="hero-cta-row" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
@@ -168,9 +130,9 @@ export default function HeroSection() {
             flexWrap: 'wrap',
           }}>
             {[
-              { num: '6', label: 'AI Modules' },
+              { num: '13+', label: 'AI Lessons' },
               { num: '226+', label: 'Prompt Templates' },
-              { num: '1,200+', label: 'Active Creators' },
+              { num: '1,200+', label: 'Active Users' },
             ].map(s => (
               <div key={s.label}>
                 <div style={{
@@ -237,10 +199,10 @@ export default function HeroSection() {
                 marginBottom: 16,
               }}>
                 {[
-                  { label: 'MODULES', value: '6/6', color: 'var(--neon-green)' },
-                  { label: 'PROMPTS', value: '226', color: 'var(--neon-blue)' },
-                  { label: 'PROGRESS', value: '87%', color: 'var(--neon-yellow)' },
-                  { label: 'STREAK', value: '12d', color: 'var(--neon-green)' },
+                  { label: 'MODULES', value: '13+ Lessons that teach you how to use AI', color: 'var(--neon-green)' },
+                  { label: 'PROMPTS', value: '226+ Ready-made AI instructions', color: 'var(--neon-blue)' },
+                  { label: 'CREATIVE TOOLS', value: 'Explore powerful AI tools', color: 'var(--neon-yellow)' },
+                  { label: 'EARN ONLINE', value: 'Learn to make money using AI skills', color: 'var(--neon-green)' },
                 ].map(stat => (
                   <div key={stat.label} style={{
                     background: 'rgba(0,255,163,0.03)',
@@ -357,18 +319,18 @@ export default function HeroSection() {
               color: 'var(--neon-yellow)',
               letterSpacing: 1,
               marginBottom: 4,
-            }}>PROMPT</div>
+            }}>START</div>
             <div style={{
               fontFamily: 'Orbitron, sans-serif',
               fontSize: '1.4rem',
               fontWeight: 900,
               color: 'var(--neon-yellow)',
-            }}>226+</div>
+            }}>NOW</div>
             <div style={{
               fontSize: '0.55rem',
               color: 'var(--text-dim)',
               textAlign: 'center',
-            }}>Templates</div>
+            }}>FREE</div>
           </div>
 
           <div className="floating-element e2" style={{
@@ -395,7 +357,7 @@ export default function HeroSection() {
               color: 'var(--neon-green)',
               letterSpacing: 1,
               marginBottom: 6,
-            }}>AI VIDEO</div>
+            }}>STAY UPDATED</div>
             <i className="fas fa-film" style={{
               fontSize: '1.4rem',
               color: 'var(--neon-green)',

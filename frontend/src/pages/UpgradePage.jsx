@@ -11,7 +11,7 @@ const PLANS = [
     label: 'MONTHLY',
     sub: '$9.99 / month',
     features: [
-      'All 6 AI learning modules',
+      'All 13+ AI learning modules',
       '226+ prompt templates',
       'AI tutor access',
       'Cancel anytime',
@@ -34,7 +34,7 @@ const PLANS = [
   },
 ];
 
-function PaymentModal({ plan, onClose }) {
+function PaymentModal({ plan, onClose, onPaid }) {
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,8 +64,7 @@ function PaymentModal({ plan, onClose }) {
         if (data.data.status === 'paid') {
           setStatus('paid');
           clearInterval(interval);
-          localStorage.removeItem('joeailabs_user');
-          setTimeout(() => navigate('/dashboard'), 1500);
+          setTimeout(() => onPaid?.(), 1500);
         }
       } catch {}
     }, 3000);
@@ -116,7 +115,7 @@ function PaymentModal({ plan, onClose }) {
               </div>
             )}
 
-            {order.checkoutUrl && (
+            {order.checkoutUrl ? (
               <div style={{ marginBottom: 16 }}>
                 <a href={order.checkoutUrl} target="_blank" rel="noopener noreferrer"
                   className="btn btn-primary btn-full" style={{ marginBottom: 8 }}>
@@ -126,6 +125,10 @@ function PaymentModal({ plan, onClose }) {
                   <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`} />
                   {copied ? 'COPIED!' : 'COPY CHECKOUT LINK'}
                 </button>
+              </div>
+            ) : (
+              <div style={{ color: 'var(--text-muted)', marginBottom: 16 }}>
+                Checkout link unavailable. Please try again or contact support.
               </div>
             )}
 
@@ -148,6 +151,7 @@ function PaymentModal({ plan, onClose }) {
 }
 
 export default function UpgradePage() {
+  const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [notifyEmail, setNotifyEmail] = useState({ mpesa: '', airtel: '' });
@@ -164,6 +168,12 @@ export default function UpgradePage() {
       </div>
     );
   }
+
+  const handlePaid = async () => {
+    await refreshUser();
+    setSelectedPlan(null);
+    navigate('/dashboard');
+  };
 
   const handleWaitlist = async (source) => {
     const email = notifyEmail[source];
@@ -191,7 +201,7 @@ export default function UpgradePage() {
           UNLOCK <span style={{ color: 'var(--neon-yellow)' }}>PREMIUM</span>
         </h1>
         <p style={{ color: 'var(--text-muted)', maxWidth: 500, margin: '0 auto' }}>
-          Get full access to all 6 modules, 226+ prompt templates, and the AI tutor.
+           Get full access to all 13+ modules, 226+ prompt templates, and the AI tutor.
         </p>
       </div>
 
@@ -281,7 +291,13 @@ export default function UpgradePage() {
         </div>
       </div>
 
-      {selectedPlan && <PaymentModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} />}
+      {selectedPlan && (
+        <PaymentModal
+          plan={selectedPlan}
+          onClose={() => setSelectedPlan(null)}
+          onPaid={handlePaid}
+        />
+      )}
     </div>
   );
 }

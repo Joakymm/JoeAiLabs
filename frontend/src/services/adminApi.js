@@ -19,6 +19,7 @@ export const adminAPI = {
   createPrompt:     (data)      => api.post('/admin/prompts', data),
   bulkImportPrompts:(prompts)   => api.post('/admin/prompts/bulk-import', { prompts }),
   updatePrompt:     (id, data)  => api.put(`/admin/prompts/${id}`, data),
+  toggleFeatured:   (id, val)   => api.patch(`/admin/prompts/${id}/featured`, { featured: val }),
   deletePrompt:     (id)        => api.delete(`/admin/prompts/${id}`),
 
   // Users

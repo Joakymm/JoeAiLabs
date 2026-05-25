@@ -4,12 +4,15 @@ import { useToast }     from './hooks/index.js';
 import { ToastContainer, ProtectedRoute } from './components/ui/index.jsx';
 import Navbar           from './components/layout/Navbar.jsx';
 import ChatWidget       from './components/chat/ChatWidget.jsx';
+import AIToolsMarquee   from './components/ui/AIToolsMarquee';
 
 import LandingPage      from './pages/LandingPage.jsx';
 import { LoginPage, RegisterPage } from './pages/auth/AuthPages.jsx';
 import DashboardPage    from './pages/dashboard/DashboardPage.jsx';
 import { ModulesPage, ModuleDetailPage } from './pages/modules/ModulesPage.jsx';
 import LessonPage       from './pages/modules/LessonPage.jsx';
+import QuizPage         from './pages/modules/QuizPage.jsx';
+import SettingsPage     from './pages/dashboard/SettingsPage.jsx';
 import PromptsPage      from './pages/prompts/PromptsPage.jsx';
 import UpgradePage      from './pages/UpgradePage.jsx';
 import CommunityPage    from './pages/community/CommunityPage.jsx';
@@ -41,6 +44,7 @@ export default function App() {
       <AuthProvider>
         <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
           <Navbar />
+          <AIToolsMarquee />
           <main style={{ flex:1 }}>
             <Routes>
               {/* Public */}
@@ -51,8 +55,10 @@ export default function App() {
 
               {/* Protected */}
               <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+              <Route path="/settings"  element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               <Route path="/modules"   element={<ProtectedRoute><ModulesPage /></ProtectedRoute>} />
               <Route path="/modules/:id" element={<ProtectedRoute><ModuleDetailPage /></ProtectedRoute>} />
+              <Route path="/modules/:moduleId/quiz" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
               <Route path="/lessons/:id" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
               <Route path="/prompts"   element={<ProtectedRoute><PromptsPage /></ProtectedRoute>} />
               <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />

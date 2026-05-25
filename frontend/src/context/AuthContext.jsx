@@ -8,12 +8,27 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('joeailabs_user');
-    const token  = localStorage.getItem('joeailabs_token');
-    if (stored && token) {
-      try { setUser(JSON.parse(stored)); } catch {}
-    }
-    setLoading(false);
+    const initAuth = async () => {
+      const token = localStorage.getItem('joeailabs_token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data } = await authAPI.me();
+        setUser(data.user);
+        localStorage.setItem('joeailabs_user', JSON.stringify(data.user));
+      } catch {
+        localStorage.removeItem('joeailabs_token');
+        localStorage.removeItem('joeailabs_user');
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
   }, []);
 
   const login = async (email, password) => {

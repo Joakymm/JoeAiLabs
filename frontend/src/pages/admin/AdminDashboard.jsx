@@ -1,13 +1,14 @@
 import { adminAPI } from '../../services/adminApi';
 import { useFetch } from '../../hooks/index.js';
 import { Spinner, StatCard } from '../../components/ui/index.jsx';
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
 
 export default function AdminDashboard() {
   const { data, loading } = useFetch(() => adminAPI.getAnalytics());
 
   if (loading) return <Spinner text="LOADING ADMIN DASHBOARD" />;
 
-  const { overview, revenue } = data || { overview: {}, revenue: {} };
+  const { overview, revenue, dailySignups } = data || { overview: {}, revenue: {}, dailySignups: [] };
 
   return (
     <div>
@@ -41,7 +42,7 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {data.topPrompts.map((p, i) => (
+              {data.topPrompts.map((p) => (
                 <tr key={p._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                   <td style={{ padding: '8px 12px', color: 'var(--text-main)' }}>{p.title}</td>
                   <td style={{ padding: '8px 12px', textAlign: 'right', color: 'var(--neon-yellow)', fontFamily: 'Orbitron,sans-serif' }}>{p.copyCount}</td>
@@ -52,7 +53,25 @@ export default function AdminDashboard() {
         ) : <p style={{ color: 'var(--text-dim)' }}>No prompt data yet.</p>}
       </div>
 
-      <div className="card">
+      {/* Daily Sign‑ups Line Chart */}
+      <div className="card" style={{ marginBottom: 24 }}>
+        <h3 style={{ fontFamily: 'Orbitron,sans-serif', fontSize: '0.85rem', color: 'var(--neon-green)', marginBottom: 16, letterSpacing: 1 }}>
+          <i className="fas fa-user-plus" style={{ marginRight: 8 }} />DAILY SIGN‑UPS (LAST 30 DAYS)
+        </h3>
+        {dailySignups && dailySignups.length > 0 ? (
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={dailySignups} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis dataKey="_id" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
+              <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
+              <Tooltip contentStyle={{ background: 'var(--bg-dark)', border: 'none', color: 'var(--text-main)' }} />
+              <Line type="monotone" dataKey="count" stroke="var(--neon-blue)" strokeWidth={2} dot={{ r: 2, fill: 'var(--neon-blue)' }} />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : <p style={{ color: 'var(--text-dim)' }}>No signup data.</p>}
+      </div>
+
+      <div className="card" style={{ marginBottom: 24 }}>
         <h3 style={{ fontFamily: 'Orbitron,sans-serif', fontSize: '0.85rem', color: 'var(--neon-green)', marginBottom: 16, letterSpacing: 1 }}>
           <i className="fas fa-layer-group" style={{ marginRight: 8 }} />MODULE PROGRESS
         </h3>
@@ -73,7 +92,7 @@ export default function AdminDashboard() {
               ))}
             </tbody>
           </table>
-        ) : <p style={{ color: 'var(--text-dim)' }}>No module data yet.</p>}
+        ) : <p style={{ color: 'var(--text-dim)' }}>No module data.</p>}
       </div>
     </div>
   );

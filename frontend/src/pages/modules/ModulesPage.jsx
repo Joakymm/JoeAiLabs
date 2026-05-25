@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { modulesAPI } from '../../services/api';
+import { modulesAPI, quizzesAPI } from '../../services/api';
 import { useFetch }   from '../../hooks/index.js';
 import { Spinner, ProgressBar, EmptyState } from '../../components/ui/index.jsx';
 
@@ -19,7 +19,7 @@ export function ModulesPage() {
           <div>
             <span className="badge badge-green" style={{ marginBottom:12 }}>CURRICULUM</span>
             <h1 style={{ fontFamily:'Orbitron,sans-serif', fontSize:'clamp(1.5rem,3vw,2.2rem)', marginBottom:8 }}>AI LEARNING MODULES</h1>
-            <p style={{ color:'var(--text-muted)' }}>6 structured modules. Go at your own pace. Start free.</p>
+            <p style={{ color:'var(--text-muted)' }}>13+ structured modules. Go at your own pace. Start free.</p>
           </div>
         </div>
       </div>
@@ -86,6 +86,7 @@ export function ModulesPage() {
 export function ModuleDetailPage() {
   const { id }  = useParams();
   const { data, loading, error } = useFetch(() => modulesAPI.get(id), [id]);
+  const { data: quizResponse } = useFetch(() => quizzesAPI.getByModule(id), [id]);
 
   if (loading) return <Spinner text="LOADING MODULE" />;
   if (error)   return (
@@ -168,6 +169,113 @@ export function ModuleDetailPage() {
             </Link>
           ))}
         </div>
+
+        {/* ── Final Assessment Card ─────────────────────────────────────────── */}
+        {quizResponse?.data && (() => {
+          const quiz = quizResponse.data;
+          const lastAttempt = quizResponse.lastAttempt;
+          const allDone = pct === 100;
+
+          return (
+            <div style={{ marginTop: 32 }}>
+              <div style={{
+                borderRadius: 16,
+                padding: '28px 32px',
+                background: allDone
+                  ? 'linear-gradient(135deg, rgba(0,255,163,0.06) 0%, rgba(0,212,255,0.04) 100%)'
+                  : 'rgba(255,255,255,0.02)',
+                border: allDone
+                  ? '1px solid rgba(0,255,163,0.25)'
+                  : '1px solid rgba(255,255,255,0.06)',
+                boxShadow: allDone ? '0 0 40px rgba(0,255,163,0.06)' : 'none',
+                position: 'relative',
+                overflow: 'hidden',
+              }}>
+                {allDone && (
+                  <div style={{
+                    position: 'absolute', top: -40, right: -40,
+                    width: 160, height: 160, borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(0,255,163,0.12) 0%, transparent 70%)',
+                    pointerEvents: 'none',
+                  }} />
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                    <div style={{
+                      width: 56, height: 56, borderRadius: 14, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: allDone ? 'rgba(0,255,163,0.12)' : 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${allDone ? 'rgba(0,255,163,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                      fontSize: '1.5rem',
+                    }}>
+                      {allDone ? '🏆' : '🔒'}
+                    </div>
+
+                    <div>
+                      <div style={{
+                        fontFamily: 'Orbitron,sans-serif', fontSize: '0.65rem',
+                        letterSpacing: 2, marginBottom: 4,
+                        color: allDone ? 'var(--neon-green)' : 'var(--text-dim)',
+                      }}>
+                        FINAL ASSESSMENT
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 4 }}>
+                        {quiz.title}
+                      </div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                        {allDone
+                          ? 'Prove your mastery and secure +50 reputation points.'
+                          : `Complete all ${totalCount} lessons to unlock this assessment.`}
+                      </div>
+
+                      {lastAttempt && (
+                        <div style={{
+                          marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8,
+                          padding: '4px 12px', borderRadius: 20,
+                          background: lastAttempt.passed ? 'rgba(0,255,163,0.1)' : 'rgba(255,60,90,0.1)',
+                          border: `1px solid ${lastAttempt.passed ? 'rgba(0,255,163,0.3)' : 'rgba(255,60,90,0.3)'}`,
+                          fontSize: '0.75rem', fontFamily: 'Orbitron,sans-serif',
+                          color: lastAttempt.passed ? 'var(--neon-green)' : '#ff6680',
+                        }}>
+                          <i className={`fas ${lastAttempt.passed ? 'fa-check-circle' : 'fa-times-circle'}`} />
+                          LAST SCORE: {lastAttempt.score}% — {lastAttempt.passed ? 'PASSED' : 'FAILED'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ flexShrink: 0 }}>
+                    {allDone ? (
+                      <Link
+                        to={`/modules/${id}/quiz`}
+                        className="btn btn-primary"
+                        style={{
+                          background: 'linear-gradient(90deg, var(--neon-green), var(--neon-blue))',
+                          borderColor: 'transparent', color: '#020508', fontWeight: 700,
+                        }}
+                      >
+                        <i className="fas fa-bolt" />
+                        {lastAttempt ? 'RETAKE QUIZ' : 'START QUIZ'}
+                      </Link>
+                    ) : (
+                      <div style={{
+                        padding: '10px 20px', borderRadius: 10,
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        color: 'var(--text-dim)', fontSize: '0.82rem',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                      }}>
+                        <i className="fas fa-lock" />
+                        {totalCount - completedCount} lessons remaining
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

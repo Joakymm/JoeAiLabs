@@ -1,8 +1,6 @@
 const router = require('express').Router();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { protect } = require('../middleware/auth');
-const Module = require('../models/Module');
-const Lesson = require('../models/Lesson');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
@@ -10,14 +8,22 @@ const rateLimitMap = new Map();
 const MSG_LIMIT = 20;
 const WINDOW_MS = 60 * 60 * 1000;
 
+// Periodic cleanup to prevent memory leaks in SaaS environments
+setInterval(() => {
+  const now = Date.now();
+  for (const [userId, timestamps] of rateLimitMap.entries()) {
+    const valid = timestamps.filter(ts => now - ts < WINDOW_MS);
+    if (valid.length === 0) rateLimitMap.delete(userId);
+    else rateLimitMap.set(userId, valid);
+  }
+}, WINDOW_MS);
+
 function checkRateLimit(userId) {
   const now = Date.now();
-  if (!rateLimitMap.has(userId)) {
-    rateLimitMap.set(userId, []);
-    return true;
-  }
-  const timestamps = rateLimitMap.get(userId).filter(ts => now - ts < WINDOW_MS);
+  const timestamps = (rateLimitMap.get(userId) || []).filter(ts => now - ts < WINDOW_MS);
+  
   if (timestamps.length >= MSG_LIMIT) return false;
+
   timestamps.push(now);
   rateLimitMap.set(userId, timestamps);
   return true;
@@ -28,25 +34,30 @@ const SYSTEM_PROMPT = `You are JOE, the official AI tutor and assistant for JOEA
 ## Your Role
 You are a supportive, enthusiastic, and practical AI tutor. Your job is to help users learn AI skills, master prompt engineering, and apply AI tools effectively. Keep responses encouraging, practical, and concise.
 
-## What You Know
-You know the JOEAILABS curriculum inside out:
-### Module 1: AI Foundations
-Essential knowledge about how AI works, the AI landscape, LLMs, tokens, temperature, and key terminology. No math or coding needed.
+## The Curriculum (JOEAILABS Catalog)
+You should guide users through these 16 specific modules:
+1. AI Foundations (History, Terminology, LLMs)
+2. AI Assistants & Problem Solving (ChatGPT, Claude, Gemini)
+3. Prompt Engineering (RICE Framework, Advanced Techniques)
+4. AI Video Generation (Runway, Pika, Luma AI)
+5. Graphic Design with AI (Canva, AI Design Tools)
+6. AI Image Generation (Midjourney, DALL-E, Stable Diffusion) - PREMIUM
+7. Presentation & Pitch Decks (Beautiful.ai, Slide Automation)
+8. AI Writing & Content Creation (SEO, Blogging, Copywriting) - PREMIUM
+9. AI Automation & No-Code (Zapier, Make.com, Workflows) - PREMIUM
+10. AI Meeting Notes & Productivity (Fireflies.ai, Otter.ai)
+11. AI Avatar & Faceless Content (HeyGen, Synthesia) - PREMIUM
+12. Photo Editing & UI/UX Design (Figma, Photoshop AI)
+13. AI Website Building (Durable, Framer AI)
+14. Icons, Assets & Resources (Design Assets)
+15. AI Tools Mastery (Deep dives into top tools) - PREMIUM
+16. AI Content Monetization (Freelancing, Digital Products) - PREMIUM
 
-### Module 2: Prompt Engineering
-The RICE framework (Role, Instructions, Context, Example), chain-of-thought prompting, few-shot prompting, role stacking, constraint prompting, and iterative refinement. Business-ready prompt formulas for email, content, research, sales, and more.
-
-### Module 3: Productivity with AI
-Building AI productivity stacks, tool selection, workflow design, automation with Zapier/Make.com, and the 2-hour audit method.
-
-### Module 4: Content Creation (Premium)
-Blog writing, social media content, sales copy, and content calendars. 10x output with AI.
-
-### Module 5: AI Tools Mastery (Premium)
-Midjourney, ElevenLabs, Runway, HeyGen, and advanced tool combinations.
-
-### Module 6: Making Money with AI (Premium)
-Freelancing, digital products, automation agencies, and AI content businesses.
+## Strategic Guidance
+- If a user asks about images, recommend Module 6.
+- If they want to build a business, suggest Module 16.
+- For automation, point them to Module 9.
+- Always check if the user is Premium before recommending Premium content deeply.
 
 ## Your Personality
 - Enthusiastic but not fake
@@ -76,7 +87,10 @@ router.post('/', protect, async (req, res) => {
       return res.status(500).json({ success: false, message: 'Gemini API key not configured.' });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash',
+      systemInstruction: SYSTEM_PROMPT
+    });
 
     const chatHistory = [];
     if (history && Array.isArray(history)) {
@@ -90,7 +104,7 @@ router.post('/', protect, async (req, res) => {
     }
 
     const contextLine = buildContextPrompt(req.user);
-    const fullPrompt = `${SYSTEM_PROMPT}\n\n${contextLine}\n\n${message}`;
+    const fullPrompt = `${contextLine}\n\n${message}`;
 
     const result = await model.generateContentStream({
       contents: [

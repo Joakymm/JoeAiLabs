@@ -114,6 +114,69 @@ router.get('/status/:orderId', protect, async (req, res) => {
   }
 });
 
+// ── POST /api/payments/simulate/mpesa ──────────────────────────────────────
+// Simulated M-Pesa STK Push for Demo Purposes
+router.post('/simulate/mpesa', protect, async (req, res) => {
+  try {
+    const { phoneNumber, amount, planType } = req.body;
+    if (!phoneNumber || !amount) {
+      return res.status(400).json({ success: false, message: 'Phone and amount required.' });
+    }
+
+    const orderId = `MPESA-${Date.now()}`;
+    const payment = await Payment.create({
+      userId: req.user._id,
+      orderId,
+      amount,
+      planType,
+      currency: 'KES',
+      status: 'pending'
+    });
+
+    // Simulate the delay of a mobile STK push
+    setTimeout(async () => {
+      try {
+        payment.status = 'paid';
+        await payment.save();
+        await User.findByIdAndUpdate(payment.userId, { isPremium: true, $inc: { reputationScore: 50 } });
+      } catch (err) {
+        console.error('M-Pesa Simulation Background Task Error:', err.message);
+      }
+    }, 5000);
+
+    res.json({
+      success: true,
+      message: 'STK Push sent. Please check your phone to complete the simulation.',
+      data: { orderId }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ── POST /api/payments/simulate/airtel ─────────────────────────────────────
+router.post('/simulate/airtel', protect, async (req, res) => {
+  try {
+    const { phoneNumber, amount, planType } = req.body;
+    const orderId = `AIRTEL-${Date.now()}`;
+    
+    await Payment.create({
+      userId: req.user._id,
+      orderId,
+      amount,
+      planType,
+      currency: 'KES',
+      status: 'paid' // Simulate instant success for Airtel
+    });
+
+    await User.findByIdAndUpdate(req.user._id, { isPremium: true, $inc: { reputationScore: 50 } });
+
+    res.json({ success: true, message: 'Airtel Money payment successful!', data: { orderId } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ── POST /api/payments/waitlist ─────────────────────────────────────────────
 router.post('/waitlist', async (req, res) => {
   try {

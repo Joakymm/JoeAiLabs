@@ -22,8 +22,10 @@ const promptSchema = new mongoose.Schema({
     type: { type: String, enum: ['text', 'image', 'video', 'audio', ''], default: '' },
     url: { type: String, default: '' },
     thumbnail: { type: String, default: '' },
+    caption: { type: String, default: '' },
     _id: false,
   },
+  featured: { type: Boolean, default: false },
 }, { timestamps: true });
 
 promptSchema.index({ category: 1, subcategory: 1 });

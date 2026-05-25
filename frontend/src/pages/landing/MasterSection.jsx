@@ -7,36 +7,109 @@ import neuralChats from '../../images/cardsimage/Connect_and_Chat.jpg';
 
 const MASTER_ITEMS = [
   {
-    icon: 'fa-graduation-cap',
-    title: 'AI Academy',
-    desc: 'Learn AI from beginner to advanced using real-world projects.',
+    icon: 'fa-robot',
+    title: 'AI Assistants & Problem Solving',
+    desc: 'Master ChatGPT, Claude, Gemini and Copilot for coding, research, business, and productivity.',
     color: 'var(--neon-green)',
     accent: 'rgba(0,255,163,0.08)',
     preview: '🧠',
     image: aiAcademy,
   },
   {
-    icon: 'fa-bolt',
-    title: 'Prompt Engineering',
-    desc: 'Master prompts that generate content, code, videos, and income.',
-    color: 'var(--neon-yellow)',
-    accent: 'rgba(255,214,0,0.08)',
-    preview: '⚡',
-    image: promptEngineering,
-  },
-  {
     icon: 'fa-film',
-    title: 'AI Video Creation',
-    desc: 'Create cinematic AI videos, voiceovers, and viral content.',
+    title: 'AI Video Generation',
+    desc: 'Create cinematic AI videos from text prompts using Runway, Pika, RecCloud and Luma AI.',
     color: 'var(--neon-blue)',
     accent: 'rgba(0,212,255,0.08)',
     preview: '🎬',
     image: aiVideo,
   },
   {
+    icon: 'fa-palette',
+    title: 'Graphic Design with AI',
+    desc: 'Design social posts, brands, posters and ads using Canva, Microsoft Designer and Adobe Express.',
+    color: 'var(--neon-yellow)',
+    accent: 'rgba(255,214,0,0.08)',
+    preview: '🎨',
+    image: promptEngineering,
+  },
+  {
+    icon: 'fa-image',
+    title: 'AI Image Generation',
+    desc: 'Generate realistic and artistic images with Midjourney, DALL·E, Stable Diffusion and Leonardo AI.',
+    color: 'var(--neon-green)',
+    accent: 'rgba(0,255,163,0.08)',
+    preview: '🖼️',
+    image: toolNexus,
+  },
+  {
+    icon: 'fa-file-powerpoint',
+    title: 'AI Presentation Design',
+    desc: 'Build professional business presentations with PowerPoint, Google Slides and Beautiful.ai.',
+    color: 'var(--neon-yellow)',
+    accent: 'rgba(255,214,0,0.08)',
+    preview: '📊',
+    image: neuralChats,
+  },
+  {
+    icon: 'fa-pen-fancy',
+    title: 'AI Content Creation',
+    desc: 'Use AI for blogs, scripts, copywriting, SEO and email marketing at 10x speed.',
+    color: 'var(--neon-blue)',
+    accent: 'rgba(0,212,255,0.08)',
+    preview: '✍️',
+    image: aiMarket,
+  },
+  {
+    icon: 'fa-gears',
+    title: 'AI Automation & No-Code',
+    desc: 'Automate businesses and workflows with Zapier, Bardeen and Make — no coding required.',
+    color: 'var(--neon-green)',
+    accent: 'rgba(0,255,163,0.08)',
+    preview: '⚡',
+    image: toolNexus,
+  },
+  {
+    icon: 'fa-clipboard-list',
+    title: 'AI Meeting Notes & Productivity',
+    desc: 'Turn meetings into searchable knowledge with Fireflies.ai, Laxis and Otter.ai.',
+    color: 'var(--neon-yellow)',
+    accent: 'rgba(255,214,0,0.08)',
+    preview: '📝',
+    image: promptEngineering,
+  },
+  {
+    icon: 'fa-user-robot',
+    title: 'AI Avatar & Faceless Content',
+    desc: 'Create AI avatars and digital humans with Synthesia, HeyGen and D-ID.',
+    color: 'var(--neon-blue)',
+    accent: 'rgba(0,212,255,0.08)',
+    preview: '👤',
+    image: aiVideo,
+  },
+  {
+    icon: 'fa-crop',
+    title: 'Photo Editing & UI/UX Design',
+    desc: 'Edit photos and design interfaces with Photoshop, Photopea and Figma.',
+    color: 'var(--neon-green)',
+    accent: 'rgba(0,255,163,0.08)',
+    preview: '🖌️',
+    image: neuralChats,
+  },
+  {
+    icon: 'fa-globe',
+    title: 'AI Website Building',
+    desc: 'Build websites using AI and no-code tools like Durable, 10Web and Framer.',
+    color: 'var(--neon-yellow)',
+    accent: 'rgba(255,214,0,0.08)',
+    preview: '🌐',
+    image: toolNexus,
+  },
+ 
+  {
     icon: 'fa-cubes',
-    title: 'Tool Nexus',
-    desc: 'Discover the best AI tools for productivity and monetization.',
+    title: 'AI Tools Mastery',
+    desc: 'Discover the best AI tools for productivity, creativity, and monetization.',
     color: 'var(--neon-green)',
     accent: 'rgba(0,255,163,0.08)',
     preview: '🛠️',
@@ -59,6 +132,15 @@ const MASTER_ITEMS = [
     accent: 'rgba(0,212,255,0.08)',
     preview: '💬',
     image: neuralChats,
+  },
+  {
+    icon: 'fa-coins',
+    title: 'AI Content Monetization',
+    desc: 'Build income streams with AI freelancing, digital products, automation agencies, and more.',
+    color: 'var(--neon-yellow)',
+    accent: 'rgba(255,214,0,0.08)',
+    preview: '💰',
+    image: aiAcademy,
   },
 ];
 
@@ -87,11 +169,11 @@ export default function MasterSection() {
           </h2>
           <p style={{
             color: 'var(--text-muted)',
-            maxWidth: 500,
+            maxWidth: 600,
             margin: '0 auto',
             fontSize: '0.95rem',
           }}>
-            6 AI modules, 100+ lessons, and a thriving creator community to support you at every step.
+            13+ AI modules, hands-on lessons, and a thriving creator community to support you at every step.
           </p>
         </div>
 
@@ -105,16 +187,13 @@ export default function MasterSection() {
               }}
             >
               <div className="master-card-inner">
-                {/* Glow accent */}
                 <div className="master-card-glow" style={{ background: item.color }} />
 
-                {/* Card Image */}
                 <div className="master-card-img-wrap">
                   <img src={item.image} alt="" className="master-card-img" />
                   <div className="master-card-img-overlay" />
                 </div>
 
-                {/* Icon */}
                 <div style={{
                   width: 44,
                   height: 44,
