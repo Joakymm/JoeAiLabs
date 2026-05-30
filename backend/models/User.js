@@ -20,11 +20,6 @@ const userSchema = new mongoose.Schema({
   completedLessons:{ type: [progressEntrySchema], default: [] },
   bookmarks:              [{ type: mongoose.Schema.Types.ObjectId, ref: 'Prompt' }],
   lastActive:             { type: Date, default: Date.now },
-  isEmailVerified:        { type: Boolean, default: false },
-  emailVerificationToken: { type: String },
-  emailVerificationExpiry:{ type: Date },
-  resetToken:             { type: String },
-  resetTokenExpiry:       { type: Date },
 }, { timestamps: true });
 
 // Hash password before save

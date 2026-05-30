@@ -24,8 +24,7 @@ const ChatRoomPage     = lazy(() => import('./pages/community/ChatRoomPage.jsx')
 const BookmarksPage    = lazy(() => import('./pages/prompts/BookmarksPage.jsx'));
 const LeaderboardPage  = lazy(() => import('./pages/LeaderboardPage.jsx'));
 const CertificatesPage = lazy(() => import('./pages/CertificatesPage.jsx'));
-const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage.jsx'));
-const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage.jsx'));
+
 const AdminLayout      = lazy(() => import('./pages/admin/AdminLayout.jsx'));
 const AdminDashboard   = lazy(() => import('./pages/admin/AdminDashboard.jsx'));
 const CourseManagement = lazy(() => import('./pages/admin/CourseManagement.jsx'));
@@ -66,8 +65,6 @@ export default function App() {
                 <Route path="/"         element={<LandingPage />} />
                 <Route path="/login"    element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
                 <Route path="/upgrade"  element={<UpgradePage />} />
 
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

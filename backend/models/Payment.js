@@ -9,6 +9,7 @@ const paymentSchema = new mongoose.Schema({
   planType: { type: String, enum: ['monthly', 'lifetime'], required: true },
   binanceTransactionId: { type: String, default: '' },
   prepayId: { type: String, default: '' },
+  mpesaReceipt: { type: String, default: '' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Payment', paymentSchema);
