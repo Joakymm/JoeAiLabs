@@ -11,9 +11,9 @@ const { Quiz, QuizAttempt } = require('../models/Quiz');
 
 const SYSTEM_SETTINGS = [
   { key: 'maintenanceMode', value: false },
-  { key: 'announcement', value: 'Welcome to JOEAILABS — Learn AI skills, build projects, and unlock premium content.' },
-  { key: 'paymentMethods', value: ['Binance Pay', 'Mpesa', 'Airtel Money'] },
-  { key: 'communityLinks', value: { telegram: 'https://t.me/joeailabs', whatsapp: 'https://chat.whatsapp.com/joinjoeailabs' } },
+  { key: 'announcement', value: { text: 'Welcome to JOEAILABS — Learn AI skills, build projects, and unlock premium content.', link: '', isActive: true } },
+  { key: 'paymentMethods', value: { binance: true, mpesa: false, airtel: false } },
+  { key: 'communityLinks', value: { telegram: 'https://t.me/joeailabs', whatsapp: 'https://chat.whatsapp.com/joinjoeailabs', discord: '' } },
   { key: 'premiumPricing', value: { monthly: 9.99, lifetime: 29.00 } },
 ];
 

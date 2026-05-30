@@ -1,51 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { paymentsAPI } from '../../services/api';
+import api from '../../services/api';
+import { Link } from 'react-router-dom';
 import { Alert } from '../../components/ui/index.jsx';
-
-const COMMUNITY_LINKS = {
-  whatsapp: 'https://chat.whatsapp.com/joinjoeailabs',
-  telegram: 'https://t.me/joeailabs',
-};
 
 function addUtm(url, source) {
   const params = `utm_source=${source}&utm_medium=community&utm_campaign=joeailabs_community`;
   return `${url}${url.includes('?') ? '&' : '?'}${params}`;
 }
 
-const PLATFORMS = [
-  {
-    id: 'whatsapp',
-    name: 'WhatsApp',
-    icon: 'fa-brands fa-whatsapp',
-    color: '#25D366',
-    members: '340+',
-    online: '12',
-    desc: 'Join our WhatsApp community for daily AI tips, prompt sharing, and networking with fellow learners.',
-    inviteUrl: addUtm(COMMUNITY_LINKS.whatsapp, 'whatsapp'),
-  },
-  {
-    id: 'telegram',
-    name: 'Telegram',
-    icon: 'fa-brands fa-telegram',
-    color: '#0088cc',
-    members: '180+',
-    online: '8',
-    desc: 'Get real-time updates, exclusive prompt templates, and direct access to the JOEAILABS team.',
-    inviteUrl: addUtm(COMMUNITY_LINKS.telegram, 'telegram'),
-  },
-  {
-    id: 'discord',
-    name: 'Discord',
-    icon: 'fa-brands fa-discord',
-    color: '#5865F2',
-    members: 'Coming Soon',
-    online: '—',
-    desc: 'Our Discord server will feature dedicated channels for each module, live Q&A, and community challenges.',
-    inviteUrl: null,
-  },
-];
+
 
 export default function CommunityPage() {
+  const [communityLinks, setCommunityLinks] = useState({ whatsapp: '', telegram: '', discord: '' });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await api.get('/settings/public');
+        const links = data?.data?.communityLinks || {};
+        setCommunityLinks(links);
+      } catch {}
+    };
+    fetchSettings();
+  }, []);
+
+  const platforms = [
+    { id: 'whatsapp', name: 'WhatsApp', icon: 'fa-brands fa-whatsapp', color: '#25D366', members: 'Online', online: '—', desc: 'Join our WhatsApp community for daily AI tips, prompt sharing, and networking with fellow learners.', inviteUrl: communityLinks.whatsapp ? addUtm(communityLinks.whatsapp, 'whatsapp') : null },
+    { id: 'telegram', name: 'Telegram', icon: 'fa-brands fa-telegram', color: '#0088cc', members: 'Online', online: '—', desc: 'Get real-time updates, exclusive prompt templates, and direct access to the JOEAILABS team.', inviteUrl: communityLinks.telegram ? addUtm(communityLinks.telegram, 'telegram') : null },
+    { id: 'discord', name: 'Discord', icon: 'fa-brands fa-discord', color: '#5865F2', members: 'Coming Soon', online: '—', desc: 'Our Discord server will feature dedicated channels for each module, live Q&A, and community challenges.', inviteUrl: communityLinks.discord || null },
+  ];
+
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -87,7 +72,7 @@ export default function CommunityPage() {
 
       <div className="container" style={{ paddingBottom: 60 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 48 }}>
-          {PLATFORMS.map(p => (
+          {platforms.map(p => (
             <div key={p.id} className="card" style={{
               textAlign: 'center', padding: '32px 24px',
               borderTop: `2px solid ${p.color}44`,
@@ -150,6 +135,12 @@ export default function CommunityPage() {
               )}
             </div>
           ))}
+        </div>
+
+        <div style={{ textAlign:'center', marginBottom: 32 }}>
+          <Link to="/community/chat" className="btn btn-primary">
+            <i className="fas fa-comments" /> JOIN LIVE CHAT
+          </Link>
         </div>
 
         <div className="card" style={{ textAlign: 'center', padding: '40px 24px', maxWidth: 600, margin: '0 auto', borderColor: 'rgba(0,255,163,0.15)', background: 'rgba(0,255,163,0.02)' }}>

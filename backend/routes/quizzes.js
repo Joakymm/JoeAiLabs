@@ -1,3 +1,13 @@
+function levenshteinDistance(a, b) {
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++)
+    for (let j = 1; j <= a.length; j++)
+      matrix[i][j] = b[i-1] === a[j-1] ? matrix[i-1][j-1] : Math.min(matrix[i-1][j-1] + 1, matrix[i][j-1] + 1, matrix[i-1][j] + 1);
+  return matrix[b.length][a.length];
+}
+
 const router = require('express').Router();
 const { Quiz, QuizAttempt } = require('../models/Quiz');
 const User = require('../models/User');
@@ -65,10 +75,24 @@ router.post('/:quizId/submit', protect, async (req, res) => {
     answers.forEach(ans => {
       const q = questionMap.get(ans.questionId);
       if (q) {
-        // Handle comparison: trim and lower case for case-insensitivity
-        const userAns = (ans.answer || '').toString().trim().toLowerCase();
-        const correctAns = (q.correctAnswer || '').toString().trim().toLowerCase();
-        const isCorrect = userAns === correctAns;
+        const normalize = (s) => s.trim().toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+        const userAns = normalize(ans.answer || '');
+        const correctAns = normalize(q.correctAnswer || '');
+        let isCorrect = userAns === correctAns;
+        // Fuzzy: check if one contains the other (for longer answers)
+        if (!isCorrect && userAns.length > 3 && correctAns.length > 3) {
+          if (userAns.includes(correctAns) || correctAns.includes(userAns)) {
+            isCorrect = true;
+          }
+        }
+        // Levenshtein distance for shorter answers (< 50 chars)
+        if (!isCorrect && userAns.length < 50 && correctAns.length < 50) {
+          const dist = levenshteinDistance(userAns, correctAns);
+          const maxLen = Math.max(userAns.length, correctAns.length);
+          if (maxLen > 0 && dist / maxLen < 0.3) {
+            isCorrect = true;
+          }
+        }
 
         if (isCorrect) {
           earnedPoints += q.points || 1;

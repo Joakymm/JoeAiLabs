@@ -74,7 +74,7 @@ export default function SettingsPage() {
         <p style={{ color: 'var(--text-muted)' }}>Manage credentials, customize interface parameters, and track subscription vectors.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 32, alignItems: 'flex-start' }}>
+      <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 32, alignItems: 'flex-start' }}>
         {/* Navigation Sidebar */}
         <div className="card" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {[

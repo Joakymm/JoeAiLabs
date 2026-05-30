@@ -2,37 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { paymentsAPI } from '../services/api';
+import api from '../services/api';
 import { Alert, Spinner } from '../components/ui/index.jsx';
-
-const PLANS = [
-  {
-    id: 'monthly',
-    price: '9.99',
-    label: 'MONTHLY',
-    sub: '$9.99 / month',
-    features: [
-      'All 13+ AI learning modules',
-      '226+ prompt templates',
-      'AI tutor access',
-      'Cancel anytime',
-    ],
-    color: 'var(--neon-green)',
-  },
-  {
-    id: 'lifetime',
-    price: '29',
-    label: 'LIFETIME',
-    sub: '$29 one-time',
-    features: [
-      'Everything in Monthly',
-      'All future modules free',
-      'Priority support',
-      'Lifetime PRO badge',
-    ],
-    color: 'var(--neon-yellow)',
-    popular: true,
-  },
-];
 
 function PaymentModal({ plan, onClose, onPaid }) {
   const navigate = useNavigate();
@@ -154,9 +125,53 @@ export default function UpgradePage() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [settings, setSettings] = useState(null);
   const [notifyEmail, setNotifyEmail] = useState({ mpesa: '', airtel: '' });
   const [notifyMsg, setNotifyMsg] = useState({ mpesa: '', airtel: '' });
   const [notifyLoading, setNotifyLoading] = useState({ mpesa: false, airtel: false });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await api.get('/settings/public');
+        setSettings(data.data || {});
+      } catch {}
+    };
+    fetchSettings();
+  }, []);
+
+  const pricing = settings?.premiumPricing || { monthly: 9.99, lifetime: 29 };
+  const paymentMethods = settings?.paymentMethods || { binance: true, mpesa: false, airtel: false };
+
+  const PLANS = [
+    {
+      id: 'monthly',
+      price: pricing.monthly?.toString() || '9.99',
+      label: 'MONTHLY',
+      sub: `$${pricing.monthly || '9.99'} / month`,
+      features: [
+        'All 13+ AI learning modules',
+        '226+ prompt templates',
+        'AI tutor access',
+        'Cancel anytime',
+      ],
+      color: 'var(--neon-green)',
+    },
+    {
+      id: 'lifetime',
+      price: pricing.lifetime?.toString() || '29',
+      label: 'LIFETIME',
+      sub: `$${pricing.lifetime || '29'} one-time`,
+      features: [
+        'Everything in Monthly',
+        'All future modules free',
+        'Priority support',
+        'Lifetime PRO badge',
+      ],
+      color: 'var(--neon-yellow)',
+      popular: true,
+    },
+  ];
 
   if (user?.isPremium) {
     return (
@@ -239,26 +254,32 @@ export default function UpgradePage() {
                 </li>
               ))}
             </ul>
-            <button onClick={() => setSelectedPlan(plan)}
-              className={`btn ${plan.popular ? 'btn-yellow' : 'btn-primary'}`} style={{ width: '100%' }}>
-              {plan.popular ? <><i className="fas fa-star" /> GET LIFETIME</> : <><i className="fas fa-rocket" /> SUBSCRIBE</>}
-            </button>
+            {paymentMethods.binance ? (
+              <button onClick={() => setSelectedPlan(plan)}
+                className={`btn ${plan.popular ? 'btn-yellow' : 'btn-primary'}`} style={{ width: '100%' }}>
+                {plan.popular ? <><i className="fas fa-star" /> GET LIFETIME</> : <><i className="fas fa-rocket" /> SUBSCRIBE</>}
+              </button>
+            ) : (
+              <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', padding: 12 }}>
+                Binance Pay is currently disabled.
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Coming Soon */}
+      {/* Mobile Money */}
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <span className="badge badge-muted">COMING SOON</span>
+          <span className="badge badge-muted">MOBILE MONEY</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
           {[
-            { id: 'mpesa', label: 'M-PESA', icon: 'fa-mobile-screen', desc: 'Pay with M-Pesa from Kenya, Tanzania, and more.' },
-            { id: 'airtel', label: 'AIRTEL MONEY', icon: 'fa-money-bill-wave', desc: 'Pay with Airtel Money across Africa.' },
+            { id: 'mpesa', label: 'M-PESA', icon: 'fa-mobile-screen', desc: 'Pay with M-Pesa from Kenya, Tanzania, and more.', enabled: paymentMethods.mpesa },
+            { id: 'airtel', label: 'AIRTEL MONEY', icon: 'fa-money-bill-wave', desc: 'Pay with Airtel Money across Africa.', enabled: paymentMethods.airtel },
           ].map(method => (
-            <div key={method.id} className="card" style={{ textAlign: 'center', opacity: 0.7 }}>
+            <div key={method.id} className="card" style={{ textAlign: 'center', opacity: method.enabled ? 1 : 0.5 }}>
               <div style={{ fontSize: '2rem', marginBottom: 12, color: 'var(--text-dim)' }}>
                 <i className={`fas ${method.icon}`} />
               </div>
@@ -266,23 +287,29 @@ export default function UpgradePage() {
                 {method.label}
               </div>
               <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginBottom: 16 }}>{method.desc}</p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={notifyEmail[method.id]}
-                  onChange={e => setNotifyEmail(prev => ({ ...prev, [method.id]: e.target.value }))}
-                  style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem' }}
-                />
-                <button
-                  onClick={() => handleWaitlist(method.id)}
-                  disabled={notifyLoading[method.id]}
-                  className="btn btn-ghost btn-sm"
-                  style={{ flexShrink: 0 }}
-                >
-                  {notifyLoading[method.id] ? <i className="fas fa-circle-notch fa-spin" /> : 'NOTIFY ME'}
-                </button>
-              </div>
+              {method.enabled ? (
+                <p style={{ color: 'var(--neon-green)', fontSize: '0.82rem' }}>
+                  <i className="fas fa-check-circle" /> Available
+                </p>
+              ) : (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={notifyEmail[method.id]}
+                    onChange={e => setNotifyEmail(prev => ({ ...prev, [method.id]: e.target.value }))}
+                    style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem' }}
+                  />
+                  <button
+                    onClick={() => handleWaitlist(method.id)}
+                    disabled={notifyLoading[method.id]}
+                    className="btn btn-ghost btn-sm"
+                    style={{ flexShrink: 0 }}
+                  >
+                    {notifyLoading[method.id] ? <i className="fas fa-circle-notch fa-spin" /> : 'NOTIFY ME'}
+                  </button>
+                </div>
+              )}
               {notifyMsg[method.id] && (
                 <div style={{ marginTop: 8, fontSize: '0.78rem', color: 'var(--neon-green)' }}>{notifyMsg[method.id]}</div>
               )}

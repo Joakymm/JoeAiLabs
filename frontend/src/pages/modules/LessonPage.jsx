@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { lessonsAPI } from '../../services/api';
 import { useFetch }   from '../../hooks/index.js';
 import { Spinner, Alert } from '../../components/ui/index.jsx';
@@ -98,6 +99,7 @@ export default function LessonPage() {
 
   const [completing, setCompleting] = useState(false);
   const [doneMsg,    setDoneMsg]    = useState('');
+  const { user } = useAuth();
   const [showCelebration, setShowCelebration] = useState(false);
 
   if (loading) return <Spinner text="LOADING LESSON" />;
@@ -117,9 +119,9 @@ export default function LessonPage() {
     try {
       const res = await lessonsAPI.complete(id);
       setDoneMsg(res.data?.message || 'Lesson complete!');
-      const celebrated = localStorage.getItem('joeailabs_celebrated');
+      const celebrated = localStorage.getItem(`joeailabs_celebrated_${user?.id}`);
       if (!celebrated && !isCompleted) {
-        localStorage.setItem('joeailabs_celebrated', 'true');
+        localStorage.setItem(`joeailabs_celebrated_${user?.id}`, 'true');
         setShowCelebration(true);
       }
       refetch();

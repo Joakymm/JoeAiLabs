@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { promptsAPI } from '../../services/api';
 import { useFetch }   from '../../hooks/index.js';
 import { Spinner, EmptyState } from '../../components/ui/index.jsx';
+import { useAuth } from '../../context/AuthContext';
 
 const toolTypeMeta = [
   { type: 'writing-copy',     icon: 'fa-pen-fancy',  label: 'Writing & Copy',     color: 'var(--neon-green)'  },
@@ -20,7 +21,7 @@ const DIFF_COLORS = {
   advanced:     { bg:'rgba(255,60,90,0.08)',  color:'var(--neon-red)',    label:'Advanced'     },
 };
 
-function PromptCard({ prompt, onCopy }) {
+function PromptCard({ prompt, onCopy, onBookmark, isBookmarked }) {
   const [expanded, setExpanded] = useState(false);
   const [showSample, setShowSample] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -159,23 +160,31 @@ function PromptCard({ prompt, onCopy }) {
           <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`} />
           {copied ? 'COPIED!' : 'COPY PROMPT'}
         </button>
+        <button onClick={() => onBookmark?.(prompt._id)}
+          className="btn btn-sm btn-ghost"
+          style={{ flexShrink:0, color: isBookmarked ? 'var(--neon-red)' : 'var(--text-dim)' }}>
+          <i className={`${isBookmarked ? 'fas' : 'far'} fa-heart`} />
+        </button>
       </div>
     </div>
   );
 }
 
 export default function PromptsPage() {
+  const { user } = useAuth();
   const [search,    setSearch]    = useState('');
   const [category,  setCategory]  = useState('');
   const [toolType,  setToolType]  = useState('');
   const [diff,      setDiff]      = useState('');
+  const [featured,  setFeatured]  = useState(false);
   const [page,      setPage]      = useState(1);
+  const [bookmarks, setBookmarks] = useState([]);
 
   const fetchFn = useCallback(
-    () => promptsAPI.list({ search, category, difficulty: diff, toolType, page, limit: 12 }),
-    [search, category, diff, toolType, page]
+    () => promptsAPI.list({ search, category, difficulty: diff, toolType, featured: featured || undefined, page, limit: 12 }),
+    [search, category, diff, toolType, featured, page]
   );
-  const { data, loading, refetch } = useFetch(fetchFn, [search, category, diff, toolType, page]);
+  const { data, loading, refetch } = useFetch(fetchFn, [search, category, diff, toolType, featured, page]);
 
   const prompts    = data?.data       || [];
   const meta       = data?.meta       || {};
@@ -186,6 +195,28 @@ export default function PromptsPage() {
   const handleCopy = async (id) => {
     try { await promptsAPI.copy(id); refetch(); } catch {}
   };
+
+  const handleBookmark = async (id) => {
+    try {
+      const { data } = await promptsAPI.bookmark(id);
+      if (data.bookmarked) {
+        setBookmarks(prev => [...prev, id]);
+      } else {
+        setBookmarks(prev => prev.filter(b => b !== id));
+      }
+    } catch {}
+  };
+
+  const loadBookmarks = async () => {
+    try {
+      const { data } = await promptsAPI.getBookmarks();
+      if (data.data) {
+        setBookmarks(data.data.map(b => b.toString()));
+      }
+    } catch {}
+  };
+
+  useState(() => { loadBookmarks(); });
 
   const handleSelectToolType = (tt) => {
     setToolType(t => t === tt ? '' : tt);
@@ -212,11 +243,16 @@ export default function PromptsPage() {
               Filter by AI tool type. Copy, customise, and use with any tool.
             </p>
           </div>
-          <div style={{ textAlign:'right' }}>
-            <div style={{ fontFamily:'Orbitron,sans-serif', fontSize:'2rem', color:'var(--neon-yellow)' }}>
-              {totalPrompts || '—'}
+          <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+            <a href="/prompts/bookmarks" className="btn btn-ghost btn-sm">
+              <i className="fas fa-heart" style={{ color:'var(--neon-red)' }} /> BOOKMARKS
+            </a>
+            <div style={{ textAlign:'right' }}>
+              <div style={{ fontFamily:'Orbitron,sans-serif', fontSize:'2rem', color:'var(--neon-yellow)' }}>
+                {totalPrompts || '—'}
+              </div>
+              <div style={{ color:'var(--text-muted)', fontSize:'0.78rem', letterSpacing:1 }}>PROMPTS</div>
             </div>
-            <div style={{ color:'var(--text-muted)', fontSize:'0.78rem', letterSpacing:1 }}>PROMPTS</div>
           </div>
         </div>
       </div>
@@ -235,8 +271,20 @@ export default function PromptsPage() {
           </select>
         </div>
 
-        {/* Tool type filter chips */}
+        {/* Featured + Tool type filter chips */}
         <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:16 }}>
+          <button onClick={() => { setFeatured(f => !f); setPage(1); }}
+            style={{
+              display:'inline-flex', alignItems:'center', gap:6,
+              padding:'6px 14px', borderRadius:100, fontSize:'0.75rem', fontWeight:700,
+              cursor:'pointer', letterSpacing:0.5,
+              background: featured ? 'rgba(255,214,0,0.2)' : 'rgba(255,255,255,0.04)',
+              color: featured ? 'var(--neon-yellow)' : 'var(--text-muted)',
+              border: featured ? '1px solid rgba(255,214,0,0.5)' : '1px solid rgba(255,255,255,0.06)',
+            }}>
+            <i className="fas fa-star" style={{ fontSize:'0.7rem' }} />
+            FEATURED
+          </button>
           {toolTypeMeta.map(t => (
             <button key={t.type} onClick={() => handleSelectToolType(t.type)}
               style={{
@@ -286,7 +334,7 @@ export default function PromptsPage() {
           ? <Spinner text="LOADING PROMPTS" />
           : prompts.length === 0
             ? <EmptyState emoji="🔍" title="NO PROMPTS FOUND" description="Try a different search or clear the filters." />
-            : <div className="grid-auto">{prompts.map(p => <PromptCard key={p._id} prompt={p} onCopy={handleCopy} />)}</div>
+            : <div className="grid-auto">{prompts.map(p => <PromptCard key={p._id} prompt={p} onCopy={handleCopy} onBookmark={handleBookmark} isBookmarked={bookmarks.includes(p._id)} />)}</div>
         }
 
         {meta.pages > 1 && (

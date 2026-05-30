@@ -1,18 +1,60 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../../services/api';
 import { dashboardAPI } from '../../services/api';
 import { useFetch }     from '../../hooks/index.js';
 import { Spinner, StatCard, ProgressBar, EmptyState } from '../../components/ui/index.jsx';
 
 const MODULE_COLORS = { green:'var(--neon-green)', yellow:'var(--neon-yellow)', blue:'var(--neon-blue)' };
 
-const COMMUNITY_LINKS = [
-  { id:'whatsapp', icon:'fa-brands fa-whatsapp', color:'#25D366', label:'WhatsApp', members:'340+', url:'https://chat.whatsapp.com/joinjoeailabs?utm_source=dashboard&utm_medium=widget&utm_campaign=joeailabs_community' },
-  { id:'telegram', icon:'fa-brands fa-telegram', color:'#0088cc', label:'Telegram', members:'180+', url:'https://t.me/joeailabs?utm_source=dashboard&utm_medium=widget&utm_campaign=joeailabs_community' },
-];
+
+
+function FeaturedPrompts() {
+  const [prompts, setPrompts] = useState([]);
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const { data } = await api.get('/prompts?featured=true&limit=6');
+        setPrompts(data?.data?.slice(0, 6) || []);
+      } catch {}
+    };
+    fetchFeatured();
+  }, []);
+  if (prompts.length === 0) return null;
+  return (
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:12 }}>
+      {prompts.map(p => (
+        <Link key={p._id} to="/prompts" style={{
+          padding:'12px 14px', borderRadius:10, textDecoration:'none',
+          background:'rgba(255,214,0,0.03)', border:'1px solid rgba(255,214,0,0.12)',
+          display:'flex', flexDirection:'column', gap:6,
+        }}>
+          <span style={{ fontSize:'0.78rem', fontWeight:600, color:'var(--text-main)', lineHeight:1.3 }}>{p.title}</span>
+          <span style={{ fontSize:'0.65rem', color:'var(--text-dim)' }}>{p.category}</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { data, loading, error } = useFetch(() => dashboardAPI.get());
+  const [communityLinks, setCommunityLinks] = useState([]);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await api.get('/settings/public');
+        const links = data?.data?.communityLinks || {};
+        const result = [];
+        if (links.whatsapp) result.push({ id:'whatsapp', icon:'fa-brands fa-whatsapp', color:'#25D366', label:'WhatsApp', members:'Online', url: links.whatsapp });
+        if (links.telegram) result.push({ id:'telegram', icon:'fa-brands fa-telegram', color:'#0088cc', label:'Telegram', members:'Online', url: links.telegram });
+        if (links.discord) result.push({ id:'discord', icon:'fa-brands fa-discord', color:'#5865F2', label:'Discord', members:'Online', url: links.discord });
+        setCommunityLinks(result);
+      } catch {}
+    };
+    fetchSettings();
+  }, []);
 
   if (loading) return <Spinner text="LOADING DASHBOARD" />;
   if (error)   return <div className="container" style={{padding:60}}><p style={{color:'var(--neon-red)'}}>{error}</p></div>;
@@ -101,45 +143,60 @@ export default function DashboardPage() {
       )}
 
       {/* ── Community widget ──────────────────────────────────────────────── */}
-      <div className="card" style={{ marginBottom:32, borderColor:'rgba(0,212,255,0.15)', background:'rgba(0,212,255,0.02)' }}>
+      {communityLinks.length > 0 && (
+        <div className="card" style={{ marginBottom:32, borderColor:'rgba(0,212,255,0.15)', background:'rgba(0,212,255,0.02)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+            <h3 style={{ fontFamily:'Orbitron,sans-serif', fontSize:'0.85rem', color:'var(--neon-blue)', letterSpacing:2 }}>
+              <i className="fas fa-users" style={{ marginRight:8 }} />COMMUNITY
+            </h3>
+            <Link to="/community" style={{ color:'var(--text-muted)', fontSize:'0.78rem', textDecoration:'none' }}>
+              View all <i className="fas fa-arrow-right" style={{ marginLeft:4, fontSize:'0.65rem' }} />
+            </Link>
+          </div>
+          <div style={{ display:'flex', gap:12 }}>
+            {communityLinks.map(link => (
+              <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
+                style={{
+                  flex:1, display:'flex', alignItems:'center', gap:12,
+                  padding:'12px 16px', borderRadius:10, textDecoration:'none',
+                  background:`${link.color}08`, border:`1px solid ${link.color}22`,
+                  transition:'all 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = `${link.color}15`; e.currentTarget.style.borderColor = `${link.color}44`; }}
+                onMouseLeave={e => { e.currentTarget.style.background = `${link.color}08`; e.currentTarget.style.borderColor = `${link.color}22`; }}
+              >
+                <div style={{
+                  width:40, height:40, borderRadius:10,
+                  background:`${link.color}15`, display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:'1.3rem', color:link.color, flexShrink:0,
+                }}>
+                  <i className={link.icon} />
+                </div>
+                <div>
+                  <div style={{ fontWeight:700, fontSize:'0.88rem', color:'var(--text-main)' }}>{link.label}</div>
+                  <div style={{ fontSize:'0.75rem', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:6 }}>
+                    <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--neon-green)', display:'inline-block' }} />
+                    {link.members}
+                  </div>
+                </div>
+                <i className="fas fa-arrow-right" style={{ marginLeft:'auto', color:'var(--text-dim)', fontSize:'0.75rem' }} />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Featured Prompts ──────────────────────────────────────────────── */}
+      <div className="card" style={{ marginBottom:32 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-          <h3 style={{ fontFamily:'Orbitron,sans-serif', fontSize:'0.85rem', color:'var(--neon-blue)', letterSpacing:2 }}>
-            <i className="fas fa-users" style={{ marginRight:8 }} />COMMUNITY
+          <h3 style={{ fontFamily:'Orbitron,sans-serif', fontSize:'0.85rem', color:'var(--neon-yellow)', letterSpacing:2 }}>
+            <i className="fas fa-star" style={{ marginRight:8 }} />FEATURED PROMPTS
           </h3>
-          <Link to="/community" style={{ color:'var(--text-muted)', fontSize:'0.78rem', textDecoration:'none' }}>
+          <Link to="/prompts" style={{ color:'var(--text-muted)', fontSize:'0.78rem', textDecoration:'none' }}>
             View all <i className="fas fa-arrow-right" style={{ marginLeft:4, fontSize:'0.65rem' }} />
           </Link>
         </div>
-        <div style={{ display:'flex', gap:12 }}>
-          {COMMUNITY_LINKS.map(link => (
-            <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
-              style={{
-                flex:1, display:'flex', alignItems:'center', gap:12,
-                padding:'12px 16px', borderRadius:10, textDecoration:'none',
-                background:`${link.color}08`, border:`1px solid ${link.color}22`,
-                transition:'all 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = `${link.color}15`; e.currentTarget.style.borderColor = `${link.color}44`; }}
-              onMouseLeave={e => { e.currentTarget.style.background = `${link.color}08`; e.currentTarget.style.borderColor = `${link.color}22`; }}
-            >
-              <div style={{
-                width:40, height:40, borderRadius:10,
-                background:`${link.color}15`, display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:'1.3rem', color:link.color, flexShrink:0,
-              }}>
-                <i className={link.icon} />
-              </div>
-              <div>
-                <div style={{ fontWeight:700, fontSize:'0.88rem', color:'var(--text-main)' }}>{link.label}</div>
-                <div style={{ fontSize:'0.75rem', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:6 }}>
-                  <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--neon-green)', display:'inline-block' }} />
-                  {link.members} members online
-                </div>
-              </div>
-              <i className="fas fa-arrow-right" style={{ marginLeft:'auto', color:'var(--text-dim)', fontSize:'0.75rem' }} />
-            </a>
-          ))}
-        </div>
+        <FeaturedPrompts />
       </div>
 
       {/* ── Module cards ─────────────────────────────────────────────────── */}

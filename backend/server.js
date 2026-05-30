@@ -8,6 +8,7 @@ const ChatMessage = require('./models/ChatMessage');
 const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
+const SystemSetting = require('./models/SystemSetting');
 require('dotenv').config();
 
 if (!process.env.MONGODB_URI) {
@@ -18,6 +19,8 @@ if (!process.env.JWT_SECRET) {
   console.error('❌ Missing JWT_SECRET in environment.');
   process.exit(1);
 }
+
+const { rateLimiter, enabled: redisEnabled } = require('./services/redisClient');
 
 const app = express();
 
@@ -36,12 +39,41 @@ app.use(helmet({ contentSecurityPolicy: false })); // Basic security headers
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
 
-const limiter = rateLimit({ 
-  windowMs: 15 * 60 * 1000, 
-  max: 200, 
-  message: { success: false, message: 'Too many requests, please try again later.' } 
+// Redis-backed rate limiter (falls back to in-memory when Redis unavailable)
+app.use('/api/', async (req, res, next) => {
+  const key = req.ip || req.connection.remoteAddress || 'unknown';
+  const result = await rateLimiter(key, redisEnabled ? 300 : 200, 15 * 60 * 1000);
+  if (!result.allowed) {
+    return res.status(429).json({ success: false, message: 'Too many requests, please try again later.' });
+  }
+  next();
 });
-app.use('/api/', limiter);
+
+// ── Maintenance mode middleware ────────────────────────────────────────────────
+const { maintenanceCheck } = require('./middleware/maintenance');
+app.use(maintenanceCheck);
+
+// ── In-memory fallback rate limiter (used when Redis unavailable) ─────────────
+const fallbackLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: { success: false, message: 'Too many requests, please try again later.' },
+  skip: () => redisEnabled, // skip when Redis is active
+});
+app.use('/api/', fallbackLimiter);
+
+// ── Public settings endpoint ──────────────────────────────────────────────────
+app.get('/api/settings/public', async (req, res) => {
+  try {
+    const keys = ['announcement', 'paymentMethods', 'communityLinks', 'premiumPricing'];
+    const settings = await SystemSetting.find({ key: { $in: keys } });
+    const map = {};
+    settings.forEach(s => { map[s.key] = s.value; });
+    res.json({ success: true, data: map });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/auth',     require('./routes/auth'));
@@ -54,6 +86,8 @@ app.use('/api/chat',     require('./routes/chat'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/admin',    require('./routes/admin'));
 app.use('/api/quizzes',  require('./routes/quizzes'));
+app.use('/api/users',    require('./routes/users'));
+app.use('/api/certificates', require('./routes/certificates'));
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/api/health', (_, res) => res.json({ status: 'ok', platform: 'JOEAILABS', version: '1.0.0' }));

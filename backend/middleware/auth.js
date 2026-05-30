@@ -13,7 +13,11 @@ exports.protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = await User.findById(decoded.id).select('-password');
     if (!req.user) return res.status(401).json({ success: false, message: 'User no longer exists.' });
-    User.findByIdAndUpdate(decoded.id, { lastActive: new Date() }).catch(() => {});
+    User.findById(decoded.id).select('lastActive').then(u => {
+      if (!u || Date.now() - new Date(u.lastActive).getTime() > 3600000) {
+        User.findByIdAndUpdate(decoded.id, { lastActive: new Date() }).catch(() => {});
+      }
+    }).catch(() => {});
     next();
   } catch {
     return res.status(401).json({ success: false, message: 'Invalid or expired token.' });

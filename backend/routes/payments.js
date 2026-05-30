@@ -5,6 +5,8 @@ const Payment = require('../models/Payment');
 const Waitlist = require('../models/Waitlist');
 const { protect } = require('../middleware/auth');
 const binancePay = require('../services/binancePay');
+const mpesa = require('../services/mpesa');
+const SystemSetting = require('../models/SystemSetting');
 
 // ── POST /api/payments/binance/create-order ─────────────────────────────────
 router.post('/binance/create-order', protect, async (req, res) => {
@@ -14,7 +16,15 @@ router.post('/binance/create-order', protect, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid plan type. Choose monthly or lifetime.' });
     }
 
-    const amount = planType === 'monthly' ? 9.99 : 29.00;
+    const methodsSetting = await SystemSetting.findOne({ key: 'paymentMethods' });
+    const paymentMethods = methodsSetting ? methodsSetting.value : { binance: true, mpesa: false, airtel: false };
+    if (!paymentMethods.binance) {
+      return res.status(400).json({ success: false, message: 'Binance Pay is currently disabled.' });
+    }
+
+    const pricingSetting = await SystemSetting.findOne({ key: 'premiumPricing' });
+    const pricing = pricingSetting ? pricingSetting.value : { monthly: 9.99, lifetime: 29.00 };
+    const amount = planType === 'monthly' ? pricing.monthly : pricing.lifetime;
     const orderId = `JEL-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
 
     const payment = await Payment.create({
@@ -114,49 +124,102 @@ router.get('/status/:orderId', protect, async (req, res) => {
   }
 });
 
-// ── POST /api/payments/simulate/mpesa ──────────────────────────────────────
-// Simulated M-Pesa STK Push for Demo Purposes
-router.post('/simulate/mpesa', protect, async (req, res) => {
+// ── POST /api/payments/mpesa/stk-push ─────────────────────────────────────
+// Real M-Pesa STK Push (falls back to simulation when not configured)
+router.post('/mpesa/stk-push', protect, async (req, res) => {
   try {
-    const { phoneNumber, amount, planType } = req.body;
-    if (!phoneNumber || !amount) {
-      return res.status(400).json({ success: false, message: 'Phone and amount required.' });
+    const methodsSetting = await SystemSetting.findOne({ key: 'paymentMethods' });
+    const paymentMethods = methodsSetting ? methodsSetting.value : { binance: true, mpesa: false, airtel: false };
+    if (!paymentMethods.mpesa) {
+      return res.status(400).json({ success: false, message: 'M-Pesa is currently disabled.' });
     }
 
+    const pricingSetting = await SystemSetting.findOne({ key: 'premiumPricing' });
+    const pricing = pricingSetting ? pricingSetting.value : { monthly: 9.99, lifetime: 29.00 };
+    const { planType, phoneNumber } = req.body;
+    if (!planType || !['monthly', 'lifetime'].includes(planType)) {
+      return res.status(400).json({ success: false, message: 'Invalid plan type.' });
+    }
+    if (!phoneNumber) {
+      return res.status(400).json({ success: false, message: 'Phone number required.' });
+    }
+
+    const amount = planType === 'monthly' ? pricing.monthly : pricing.lifetime;
     const orderId = `MPESA-${Date.now()}`;
+
     const payment = await Payment.create({
       userId: req.user._id,
       orderId,
       amount,
       planType,
       currency: 'KES',
-      status: 'pending'
+      status: 'pending',
     });
 
-    // Simulate the delay of a mobile STK push
-    setTimeout(async () => {
-      try {
+    const result = await mpesa.stkPush({
+      phoneNumber,
+      amount,
+      accountReference: orderId,
+      transactionDesc: `JOEAILABS ${planType.toUpperCase()} Upgrade`,
+    });
+
+    if (result.simulated) {
+      setTimeout(async () => {
         payment.status = 'paid';
         await payment.save();
         await User.findByIdAndUpdate(payment.userId, { isPremium: true, $inc: { reputationScore: 50 } });
-      } catch (err) {
-        console.error('M-Pesa Simulation Background Task Error:', err.message);
-      }
-    }, 5000);
+      }, 5000);
+    }
 
     res.json({
       success: true,
-      message: 'STK Push sent. Please check your phone to complete the simulation.',
-      data: { orderId }
+      message: result.simulated
+        ? 'STK Push simulated. In ~5s your account will be upgraded (demo mode).'
+        : 'STK Push sent. Please check your phone to complete payment.',
+      data: { orderId, merchantRequestId: result.MerchantRequestID, simulated: !!result.simulated },
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
+// ── POST /api/payments/mpesa/callback ──────────────────────────────────────
+router.post('/mpesa/callback', async (req, res) => {
+  try {
+    const { Body } = req.body;
+    if (!Body?.stkCallback) return res.status(200).json({ ResultCode: 1, ResultDesc: 'Invalid callback' });
+
+    const { ResultCode, ResultDesc, MerchantRequestID, CallbackMetadata } = Body.stkCallback;
+
+    if (ResultCode === 0) {
+      const payment = await Payment.findOne({ orderId: MerchantRequestID });
+      if (payment && payment.status !== 'paid') {
+        payment.status = 'paid';
+        payment.mpesaReceipt = CallbackMetadata?.Item?.find(i => i.Name === 'MpesaReceiptNumber')?.Value || '';
+        await payment.save();
+        await User.findByIdAndUpdate(payment.userId, { isPremium: true, $inc: { reputationScore: 50 } });
+        console.log(`✅ M-Pesa payment completed: ${MerchantRequestID}`);
+      }
+    } else {
+      console.warn(`❌ M-Pesa payment failed (${MerchantRequestID}): ${ResultDesc}`);
+    }
+
+    res.json({ ResultCode: 0, ResultDesc: 'Success' });
+  } catch (err) {
+    console.error('M-Pesa callback error:', err.message);
+    res.json({ ResultCode: 0, ResultDesc: 'Success' });
+  }
+});
+
 // ── POST /api/payments/simulate/airtel ─────────────────────────────────────
 router.post('/simulate/airtel', protect, async (req, res) => {
   try {
+    const methodsSetting = await SystemSetting.findOne({ key: 'paymentMethods' });
+    const paymentMethods = methodsSetting ? methodsSetting.value : { binance: true, mpesa: false, airtel: false };
+    if (!paymentMethods.airtel) {
+      return res.status(400).json({ success: false, message: 'Airtel Money is currently disabled.' });
+    }
+
     const { phoneNumber, amount, planType } = req.body;
     const orderId = `AIRTEL-${Date.now()}`;
     

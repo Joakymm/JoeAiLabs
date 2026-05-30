@@ -1523,6 +1523,18 @@ label {
 }
 
 
+/* ── Settings Page Responsive ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .settings-grid { grid-template-columns: 1fr !important; }
+  .settings-grid > div:first-child {
+    display: flex; flex-direction: row; overflow-x: auto; gap: 4px; padding: 4px;
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+  }
+  .settings-grid > div:first-child button {
+    flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start; font-size: 0.7rem; padding: 8px 12px;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    SAFE AREA & VIEWPORT FIXES
    ═══════════════════════════════════════════════════════════════════════════ */
